@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinpoint - Guess the Topic</title>
+    <style>
+        :root {
+            --primary-color: #0077b5;
+            --secondary-color: #004182;
+            --success-color: #00a87e;
+            --error-color: #ff4d4d;
+            --background-color: #f5f7fa;
+            --card-color: #ffffff;
+            --text-color: #000000;
+            --hint-color: #666666;
+            --strike-color: #999999;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+
+        .subtitle {
+            color: var(--hint-color);
+            font-size: 1.1rem;
+        }
+
+        .game-container {
+            background-color: var(--card-color);
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .puzzle-info {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .puzzle-number {
+            font-weight: 600;
+            color: var(--secondary-color);
+            margin-bottom: 5px;
+        }
+
+        .puzzle-date {
+            color: var(--hint-color);
+            font-size: 0.9rem;
+        }
+
+        .hint-container {
+            margin: 25px 0;
+            padding: 15px;
+            background-color: #f0f7ff;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .hint-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .hint-text {
+            color: var(--text-color);
+            line-height: 1.5;
+            font-size: 1.1rem;
+        }
+
+        .guess-container {
+            margin: 25px 0;
+        }
+
+        .guess-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .submit-btn {
+            padding: 12px 24px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .submit-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .previous-guesses {
+            margin-top: 20px;
+            min-height: 100px;
+        }
+
+        .guess-item {
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .guess-item.correct {
+            color: var(--success-color);
+            font-weight: 600;
+        }
+
+        .guess-item.incorrect {
+            color: var(--strike-color);
+            text-decoration: line-through;
+        }
+
+        .result-container {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+
+        .result-container.success {
+            background-color: #e6f7f2;
+            border-left: 4px solid var(--success-color);
+            display: block;
+        }
+
+        .result-container.failure {
+            background-color: #ffebeb;
+            border-left: 4px solid var(--error-color);
+            display: block;
+        }
+
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .success .result-title {
+            color: var(--success-color);
+        }
+
+        .failure .result-title {
+            color: var(--error-color);
+        }
+
+        .result-score {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .next-btn {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .next-btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--hint-color);
+        }
+
+        .attempts-left {
+            text-align: center;
+            margin-top: 15px;
+            color: var(--hint-color);
+            font-style: italic;
+        }
+
+        @media (max-width: 600px) {
+            .guess-input {
+                flex-direction: column;
+            }
+
+            .submit-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Pinpoint</h1>
+        <p class="subtitle">Guess the topic based on the hints</p>
+    </header>
+
+    <div class="game-container">
+        <div class="puzzle-info">
+            <div class="puzzle-number">Puzzle #<span id="puzzle-number">1</span></div>
+            <div class="puzzle-date" id="puzzle-date">Today, June 10, 2023</div>
+        </div>
+
+        <div class="hint-container">
+            <div class="hint-title">Hint</div>
+            <div class="hint-text" id="hint-text"></div>
+        </div>
+
+        <div class="guess-container">
+            <div class="guess-input">
+                <input type="text" id="guess-input" placeholder="Enter your guess..." autocomplete="off">
+                <button class="submit-btn" id="submit-btn">Submit</button>
+            </div>
+            <div class="attempts-left" id="attempts-left"></div>
+            <div class="previous-guesses" id="previous-guesses"></div>
+        </div>
+
+        <div class="result-container" id="result-container">
+            <div class="result-title" id="result-title"></div>
+            <div class="result-score" id="result-score"></div>
+            <button class="next-btn" id="next-btn">Next Puzzle</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="streak-count">0</div>
+                <div class="stat-label">Day Streak</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="score-today">0</div>
+                <div class="stat-label">Today's Score</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="total-score">0</div>
+                <div class="stat-label">Total Score</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game data - 5 sample puzzles with progressive hints
+        const puzzles = [
+            {
+                id: 1,
+                date: "April 01, 2025",
+                hints: [
+                    "incline",
+                    "promote",
+                    "substance similar to tar",
+                    "highness or lowness (music)",
+                    "throw (baseball)"
+                ],
+                solution: "pitch",
+                maxAttempts: 5
+            },
+            {
+                id: 2,
+                date: "April 02, 2025",
+                hints: [
+                    "financial",
+                    "edge",
+                    "shore",
+                    "institution",
+                    "river feature"
+                ],
+                solution: "bank",
+                maxAttempts: 5
+            },
+            {
+                id: 3,
+                date: "April 03, 2025",
+                hints: [
+                    "royal",
+                    "piece in chess",
+                    "female ruler",
+                    "playing card",
+                    "bee colony leader"
+                ],
+                solution: "queen",
+                maxAttempts: 5
+            },
+            {
+                id: 4,
+                date: "April 04, 2025",
+                hints: [
+                    "time",
+                    "light",
+                    "source",
+                    "celestial body",
+                    "solar"
+                ],
+                solution: "sun",
+                maxAttempts: 5
+            },
+            {
+                id: 5,
+                date: "April 05, 2025",
+                hints: [
+                    "fast",
+                    "current",
+                    "body of water",
+                    "direction",
+                    "tide"
+                ],
+                solution: "stream",
+                maxAttempts: 5
+            }
+        ];
+
+        // Game state
+        let currentPuzzleIndex = 0;
+        let currentHintIndex = 0;
+        let attemptsLeft = 0;
+        let previousGuesses = [];
+        let streak = 0;
+        let scoreToday = 0;
+        let totalScore = 0;
+        let gameCompleted = false;
+
+        // DOM elements
+        const puzzleNumberElement = document.getElementById('puzzle-number');
+        const puzzleDateElement = document.getElementById('puzzle-date');
+        const hintTextElement = document.getElementById('hint-text');
+        const guessInputElement = document.getElementById('guess-input');
+        const submitBtnElement = document.getElementById('submit-btn');
+        const attemptsLeftElement = document.getElementById('attempts-left');
+        const previousGuessesElement = document.getElementById('previous-guesses');
+        const resultContainerElement = document.getElementById('result-container');
+        const resultTitleElement = document.getElementById('result-title');
+        const resultScoreElement = document.getElementById('result-score');
+        const nextBtnElement = document.getElementById('next-btn');
+        const streakCountElement = document.getElementById('streak-count');
+        const scoreTodayElement = document.getElementById('score-today');
+        const totalScoreElement = document.getElementById('total-score');
+
+        // Initialize the game
+        function initGame() {
+            const puzzle = puzzles[currentPuzzleIndex];
+            
+            // Reset game state for new puzzle
+            currentHintIndex = 0;
+            attemptsLeft = puzzle.maxAttempts;
+            previousGuesses = [];
+            gameCompleted = false;
+            
+            // Update puzzle info
+            puzzleNumberElement.textContent = puzzle.id;
+            puzzleDateElement.textContent = puzzle.date;
+            
+            // Show first hint
+            updateHint();
+            
+            // Clear previous guesses
+            previousGuessesElement.innerHTML = '';
+            
+            // Reset input and buttons
+            guessInputElement.value = '';
+            guessInputElement.focus();
+            submitBtnElement.disabled = false;
+            
+            // Hide result container
+            resultContainerElement.className = 'result-container';
+            
+            // Update stats display
+            updateStats();
+        }
+
+        // Update the current hint display
+        function updateHint() {
+            const puzzle = puzzles[currentPuzzleIndex];
+            hintTextElement.textContent = puzzle.hints[currentHintIndex];
+            attemptsLeftElement.textContent = `${attemptsLeft} attempt${attemptsLeft !== 1 ? 's' : ''} left`;
+        }
+
+        // Submit a guess
+        function submitGuess() {
+            const guess = guessInputElement.value.trim().toLowerCase();
+            
+            if (!guess) {
+                return;
+            }
+            
+            const puzzle = puzzles[currentPuzzleIndex];
+            
+            // Add to previous guesses
+            previousGuesses.push(guess);
+            
+            // Check if correct
+            if (guess === puzzle.solution) {
+                handleCorrectGuess();
+            } else {
+                handleIncorrectGuess();
+            }
+            
+            // Clear input
+            guessInputElement.value = '';
+        }
+
+        // Handle correct guess
+        function handleCorrectGuess() {
+            const puzzle = puzzles[currentPuzzleIndex];
+            gameCompleted = true;
+            
+            // Calculate score (5 points max, minus points for hints used)
+            const score = puzzle.maxAttempts - currentHintIndex;
+            scoreToday = score;
+            totalScore += score;
+            
+            // Display correct guess in previous guesses
+            displayPreviousGuesses();
+            
+            // Show success message
+            resultContainerElement.className = 'result-container success';
+            resultTitleElement.textContent = 'Passed';
+            resultScoreElement.textContent = `Score: ${score}`;
+            
+            // Update stats
+            streak++;
+            updateStats();
+            
+            // Disable input
+            submitBtnElement.disabled = true;
+        }
+
+        // Handle incorrect guess
+        function handleIncorrectGuess() {
+            const puzzle = puzzles[currentPuzzleIndex];
+            
+            attemptsLeft--;
+            
+            // Display previous guesses with strikethrough for incorrect ones
+            displayPreviousGuesses();
+            
+            // Check if game over
+            if (attemptsLeft <= 0) {
+                handleGameOver();
+                return;
+            }
+            
+            // Show next hint if available
+            if (currentHintIndex < puzzle.hints.length - 1) {
+                currentHintIndex++;
+                updateHint();
+            }
+        }
+
+        // Handle game over when all attempts are used
+        function handleGameOver() {
+            const puzzle = puzzles[currentPuzzleIndex];
+            gameCompleted = true;
+            
+            // Display correct answer in previous guesses
+            previousGuesses.push(puzzle.solution);
+            displayPreviousGuesses();
+            
+            // Show failure message
+            resultContainerElement.className = 'result-container failure';
+            resultTitleElement.textContent = 'Failed';
+            resultScoreElement.textContent = 'Score: 0';
+            
+            // Reset streak
+            streak = 0;
+            scoreToday = 0;
+            updateStats();
+            
+            // Disable input
+            submitBtnElement.disabled = true;
+        }
+
+        // Display previous guesses
+        function displayPreviousGuesses() {
+            const puzzle = puzzles[currentPuzzleIndex];
+            previousGuessesElement.innerHTML = '';
+            
+            previousGuesses.forEach((guess, index) => {
+                const guessElement = document.createElement('div');
+                guessElement.className = 'guess-item';
+                
+                if (guess === puzzle.solution && index === previousGuesses.length - 1) {
+                    guessElement.classList.add('correct');
+                    guessElement.textContent = guess;
+                } else {
+                    guessElement.classList.add('incorrect');
+                    guessElement.textContent = `~${guess}~`;
+                }
+                
+                previousGuessesElement.appendChild(guessElement);
+            });
+        }
+
+        // Move to next puzzle
+        function nextPuzzle() {
+            if (currentPuzzleIndex < puzzles.length - 1) {
+                currentPuzzleIndex++;
+                initGame();
+            } else {
+                // All puzzles completed
+                resultTitleElement.textContent = 'All puzzles completed!';
+                resultScoreElement.textContent = `Final Score: ${totalScore}`;
+                nextBtnElement.style.display = 'none';
+            }
+        }
+
+        // Update stats display
+        function updateStats() {
+            streakCountElement.textContent = streak;
+            scoreTodayElement.textContent = scoreToday;
+            totalScoreElement.textContent = totalScore;
+        }
+
+        // Event listeners
+        submitBtnElement.addEventListener('click', submitGuess);
+        guessInputElement.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                submitGuess();
+            }
+        });
+        nextBtnElement.addEventListener('click', nextPuzzle);
+
+        // Initialize the game
+        initGame();
+    </script>
+</body>
+</html>
